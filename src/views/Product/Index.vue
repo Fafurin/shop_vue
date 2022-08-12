@@ -103,10 +103,12 @@
                     <h4>Select Categories</h4>
                     <div class="checkbox-item">
                       <form>
-                        <div v-for="category in filterList.categories" class="form-group"><input type="checkbox"
-                                                                                                 :id="category.id">
+                        <div v-for="category in filterList.categories" class="form-group">
+                          <input :value="category.id" v-model="categories" type="checkbox" :id="category.id">
                           <label
-                              :for="category.id">{{ category.title }}</label></div>
+                              :for="category.id">{{ category.title }}
+                          </label>
+                        </div>
                       </form>
                     </div>
                   </div>
@@ -114,7 +116,7 @@
                     <h4>Color Option </h4>
                     <ul class="color-option">
                       <li v-for="color in filterList.colors">
-                        <a href="#0" class="color-option-single" :style="`background: ${color.title}`">
+                        <a @click.prevent="addColor(color.id)" href="#0" class="color-option-single" :style="`background: ${color.title}`">
                           <span>
                             {{ color.title }}
                           </span>
@@ -128,7 +130,7 @@
                       <div id="price-range" class="slider"></div>
                       <div class="output-price"><label for="priceRange">Price:</label> <input
                           type="text" id="priceRange" readonly></div>
-                      <button class="filterbtn"
+                      <button @click.prevent="filterProducts" class="filterbtn"
                               type="submit"> Filter
                       </button>
                     </div>
@@ -137,7 +139,7 @@
                     <h4>Tags </h4>
                     <ul class="popular-tag">
                       <li v-for="tag in filterList.tags">
-                        <a href="#0">{{ tag.title }}</a>
+                        <a @click.prevent="addTag(tag.id)" href="#0">{{ tag.title }}</a>
                       </li>
                     </ul>
                   </div>
@@ -376,12 +378,48 @@ export default {
       products: [],
       popupProduct: null,
       filterList: [],
+      categories: [],
+      colors: [],
+      prices: [],
+      tags: [],
     }
   },
 
   methods: {
+
+    filterProducts(){
+      let prices = $('#priceRange').val()
+      this.prices = prices.replace(/[\s+]|[₽]/g, '').split('-')
+      this.getProducts()
+    },
+
+    addTag(id){
+      if(!this.tags.includes(id)){
+        this.tags.push(id);
+      } else {
+        this.tags = this.tags.filter(elem => {
+          return elem !== id
+        })
+      }
+    },
+
+    addColor(id){
+      if(!this.colors.includes(id)){
+        this.colors.push(id);
+      } else {
+        this.colors = this.colors.filter(elem => {
+          return elem !== id
+        })
+      }
+    },
+
     getProducts() {
-      this.axios.get('http://localhost:8876/api/products')
+      this.axios.post('http://localhost:8876/api/products', {
+        'categories': this.categories,
+        'colors': this.colors,
+        'prices': this.prices,
+        'tags': this.tags,
+      })
           .then(res => {
             this.products = res.data.data;
           })
@@ -411,10 +449,10 @@ export default {
                 max: this.filterList.price.max,
                 values: [this.filterList.price.min, this.filterList.price.max],
                 slide: function (event, ui) {
-                  $("#priceRange").val("$" + ui.values[0] + " - $" + ui.values[1]);
+                  $("#priceRange").val("₽" + ui.values[0] + " - ₽" + ui.values[1]);
                 }
               });
-              $("#priceRange").val("$" + $("#price-range").slider("values", 0) + " - $" + $("#price-range").slider("values", 1));
+              $("#priceRange").val("₽" + $("#price-range").slider("values", 0) + " - ₽" + $("#price-range").slider("values", 1));
             }
 
           })
